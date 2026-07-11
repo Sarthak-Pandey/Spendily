@@ -4,61 +4,68 @@
 
 {% block content %}
 
-<section class="hero">
+<section class="hero" aria-labelledby="hero-title">
     <div class="hero-inner">
-        <div class="hero-badge">Personal Finance Tracker</div>
-        <h1 class="hero-title">
-            Know where your<br>
-            <em>money goes</em>
+        <div class="hero-badge" role="note"><span class="hero-badge-dot" aria-hidden="true"></span>Free to use · No credit card needed</div>
+        <h1 class="hero-title" id="hero-title">
+            Track every rupee.<br>
+            <em>Know where it goes.</em>
         </h1>
         <p class="hero-subtitle">
-            Log expenses, understand your spending patterns,
-            and take control of your financial life —
-            one transaction at a time.
+            Spendly helps you log expenses, spot patterns, and stay<br>
+            on budget — without the spreadsheet headache.
         </p>
         <div class="hero-actions">
-            <a href="{{ url_for('register') }}" class="btn-primary">Start tracking free</a>
-            <a href="{{ url_for('login') }}" class="btn-ghost">Sign in</a>
+            <a href="{{ url_for('register') }}" class="btn-primary" aria-label="Create a free Spendly account">Create free account</a>
+            <a href="#features" id="btn-see-how-it-works" class="btn-primary">See how it works</a>
         </div>
     </div>
-    <div class="hero-visual">
+    <figure class="hero-visual" role="img" aria-label="Monthly expense summary and category breakdown">
         <div class="mock-card">
-            <div class="mock-card-header">
-                <span class="mock-label">March 2026</span>
-                <span class="mock-total">₹12,450</span>
+            <div class="mock-card-dots" aria-hidden="true">
+                <span class="mock-dot mock-dot-red"></span>
+                <span class="mock-dot mock-dot-yellow"></span>
+                <span class="mock-dot mock-dot-green"></span>
             </div>
-            <div class="mock-bars">
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Bills</span>
-                    <div class="mock-bar-track">
-                        <div class="mock-bar" style="width: 72%"></div>
-                    </div>
-                    <span class="mock-amt">₹4,500</span>
+            <div class="mock-stats" role="list" aria-label="Monthly summary">
+                <div class="mock-stat" role="listitem">
+                    <span class="mock-stat-label">This month</span>
+                    <span class="mock-stat-value">₹18,240</span>
+                    <span class="mock-stat-delta mock-stat-delta-up">+12% vs last</span>
                 </div>
-                <div class="mock-bar-row">
+                <div class="mock-stat" role="listitem">
+                    <span class="mock-stat-label">Budget left</span>
+                    <span class="mock-stat-value">₹6,760</span>
+                    <span class="mock-stat-delta mock-stat-delta-good">43% remaining</span>
+                </div>
+                <div class="mock-stat" role="listitem">
+                    <span class="mock-stat-label">Transactions</span>
+                    <span class="mock-stat-value mock-stat-value-plain">34</span>
+                    <span class="mock-stat-delta">this month</span>
+                </div>
+            </div>
+            <div class="mock-bars" role="list" aria-label="Expense categories">
+                <div class="mock-bar-row" role="listitem">
                     <span class="mock-cat">Food</span>
                     <div class="mock-bar-track">
-                        <div class="mock-bar mock-bar-2" style="width: 52%"></div>
+                        <div class="mock-bar mock-bar-food" style="width: 72%" role="progressbar" aria-valuenow="72" aria-label="Food"></div>
                     </div>
-                    <span class="mock-amt">₹3,200</span>
                 </div>
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Health</span>
+                <div class="mock-bar-row" role="listitem">
+                    <span class="mock-cat">Travel</span>
                     <div class="mock-bar-track">
-                        <div class="mock-bar mock-bar-3" style="width: 33%"></div>
+                        <div class="mock-bar mock-bar-travel" style="width: 50%" role="progressbar" aria-valuenow="50" aria-label="Travel"></div>
                     </div>
-                    <span class="mock-amt">₹2,050</span>
                 </div>
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Transport</span>
+                <div class="mock-bar-row" role="listitem">
+                    <span class="mock-cat">Bills</span>
                     <div class="mock-bar-track">
-                        <div class="mock-bar mock-bar-4" style="width: 28%"></div>
+                        <div class="mock-bar mock-bar-bills" style="width: 38%" role="progressbar" aria-valuenow="38" aria-label="Bills"></div>
                     </div>
-                    <span class="mock-amt">₹1,800</span>
                 </div>
             </div>
         </div>
-    </div>
+    </figure>
 </section>
 
 <section class="features">
@@ -89,4 +96,159 @@
     </div>
 </section>
 
+<!-- Video Modal overlay structure -->
+<div id="video-modal" class="modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-container">
+        <button id="modal-close" class="modal-close-btn" aria-label="Close modal">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <div class="modal-video-wrapper">
+            <iframe id="modal-video-iframe" 
+                    src="" 
+                    title="Spendly Demo Video" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    allowfullscreen>
+            </iframe>
+        </div>
+    </div>
+</div>
 {% endblock %}
+
+{% block head %}
+<style>
+/* Modal Overlay with smooth transition & glassmorphism */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(15, 15, 15, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Modal container with scale-up transition */
+.modal-container {
+    background-color: var(--paper-card);
+    width: 90%;
+    max-width: 800px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-soft);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    position: relative;
+    transform: scale(0.95);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+
+.modal-overlay.active .modal-container {
+    transform: scale(1);
+}
+
+/* Close Button styling */
+.modal-close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(15, 15, 15, 0.05);
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+
+.modal-close-btn:hover {
+    background: var(--ink);
+    color: var(--paper);
+    transform: rotate(90deg);
+}
+
+/* Responsive aspect-ratio video wrapper */
+.modal-video-wrapper {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-video-wrapper iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('video-modal');
+    const iframe = document.getElementById('modal-video-iframe');
+    const openBtn = document.getElementById('btn-see-how-it-works');
+    const closeBtn = document.getElementById('modal-close');
+    const youtubeUrl = 'https://www.youtube.com/embed/dQw4w9WgXcQ'; // Placeholder video URL
+
+    function openModal() {
+        iframe.src = youtubeUrl + "?autoplay=1";
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        iframe.src = '';
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+
+    if (openBtn && modal && iframe && closeBtn) {
+        openBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openModal();
+        });
+
+        closeBtn.addEventListener('click', closeModal);
+
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
