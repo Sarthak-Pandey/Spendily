@@ -112,4 +112,26 @@ def seed_db():
     finally:
         if not has_app_context():
             conn.close()
+def create_user(name, email, password):
+    """
+    Hashes the password with werkzeug, inserts a row into users, returns the new user's id.
+    Raises sqlite3.IntegrityError if the email is already taken (UNIQUE constraint).
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    password_hash = generate_password_hash(password)
+    cursor.execute(
+        "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?);",
+        (name, email, password_hash)
+    )
+    conn.commit()
+    return cursor.lastrowid
 
+def get_user_by_email(email):
+    """
+    Returns a user row or None.
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE email = ?;", (email,))
+    return cursor.fetchone()
