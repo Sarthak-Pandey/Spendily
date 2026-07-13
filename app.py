@@ -1,12 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session, g
 import sqlite3
 import re
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import get_db, init_db, seed_db, close_db
+
 
 EMAIL_REGEX = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
 
 app = Flask(__name__)
+app.secret_key = "spendly-secret-key-for-session-management"
 
 
 # ------------------------------------------------------------------ #
@@ -73,8 +75,39 @@ def register():
     return render_template("register.html")
 
 
-@app.route("/login")
+@app.before_request
+def load_logged_in_user():
+    user_id = session.get("user_id")
+    if user_id is None:
+        g.user = None
+    else:
+        conn = get_db()
+        g.user = conn.execute("SELECT * FROM users WHERE id = ?;", (user_id,)).fetchone()
+
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+
+        if not email or not password:
+            error = "Both email and password are required."
+            return render_template("login.html", error=error, email=email)
+
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE email = ?;", (email,))
+        user = cursor.fetchone()
+
+        if user is None or not check_password_hash(user["password_hash"], password):
+            error = "Invalid email or password."
+            return render_template("login.html", error=error, email=email)
+
+        session.clear()
+        session["user_id"] = user["id"]
+        return redirect(url_for("landing"))
+
     return render_template("login.html")
 
 
@@ -94,7 +127,8 @@ def privacy():
 
 @app.route("/logout")
 def logout():
-    return "Logout — coming in Step 3"
+    session.clear()
+    return redirect(url_for("landing"))
 
 
 @app.route("/profile")
