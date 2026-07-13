@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Profile — Spendly{% endblock %}
+
+{% block content %}
+<div class="profile-section">
+
+    <!-- User Info Card -->
+    <div class="profile-user-card">
+        <div class="profile-avatar">
+            {{ user_info.name[0] | upper }}
+        </div>
+        <div class="profile-details">
+            <h2 class="profile-name">{{ user_info.name }}</h2>
+            <p class="profile-email">{{ user_info.email }}</p>
+            <p class="profile-joined">Member since {{ user_info.joined }}</p>
+        </div>
+    </div>
+
+    <!-- Dashboard/Profile Grid -->
+    <div class="profile-dashboard-grid">
+        
+        <!-- Main: Stats & Transactions -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+            
+            <!-- Summary Stats -->
+            <div class="widget-card">
+                <h3 class="widget-title">Monthly Summary</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Spent</span>
+                        <span class="stat-value">{{ stats.total_spent }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Transactions</span>
+                        <span class="stat-value">{{ stats.transaction_count }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Top Category</span>
+                        <span class="stat-value">{{ stats.top_category }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction History -->
+            <div class="widget-card">
+                <h3 class="widget-title">Recent Transactions</h3>
+                <div class="expense-table-wrapper">
+                    <table class="expense-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th style="text-align: right;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in transactions %}
+                            <tr>
+                                <td>{{ tx.date }}</td>
+                                <td>{{ tx.description }}</td>
+                                <td>
+                                    <span class="category-badge category-{{ tx.category | lower }}">
+                                        {{ tx.category }}
+                                    </span>
+                                </td>
+                                <td style="text-align: right; font-weight: 500; color: var(--ink);">
+                                    {{ tx.amount }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sidebar: Category Breakdown -->
+        <div class="widget-card">
+            <h3 class="widget-title">Category Breakdown</h3>
+            <div class="category-breakdown-list">
+                {% for item in category_breakdown %}
+                <div class="category-breakdown-row">
+                    <div class="category-breakdown-meta">
+                        <span>{{ item.category }}</span>
+                        <span>{{ item.amount }} ({{ item.percentage }}%)</span>
+                    </div>
+                    <div class="category-progress-track">
+                        <div class="category-progress-bar category-{{ item.category | lower }}"
+                             style="width: {{ item.percentage }}%;"
+                             role="progressbar"
+                             aria-valuenow="{{ item.percentage }}"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

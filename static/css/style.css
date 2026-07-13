@@ -686,3 +686,268 @@ a { color: inherit; text-decoration: none; }
     .legal { padding: 3rem 1rem 4rem; }
 }
 
+/* ------------------------------------------------------------------ */
+/* Auth Success Messages                                               */
+/* ------------------------------------------------------------------ */
+
+.auth-success {
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    margin-bottom: 1.25rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Profile Page                                                       */
+/* ------------------------------------------------------------------ */
+
+.profile-section {
+    padding: 3rem 2rem;
+    max-width: var(--max-width);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* User Info Card */
+.profile-user-card {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+}
+
+.profile-avatar {
+    width: 70px;
+    height: 70px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: 600;
+    font-family: var(--font-display);
+    border: 1px solid var(--border-soft);
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.profile-name {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    color: var(--ink);
+    line-height: 1.2;
+}
+
+.profile-email {
+    font-size: 0.95rem;
+    color: var(--ink-muted);
+}
+
+.profile-joined {
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+}
+
+/* Layout for Dashboard Widgets */
+.profile-dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+@media (max-width: 900px) {
+    .profile-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Widget Card styling */
+.widget-card {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+}
+
+.widget-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    color: var(--ink);
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+/* Summary Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 600px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.stat-item {
+    background: var(--paper);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+/* Transaction Table */
+.expense-table-wrapper {
+    overflow-x: auto;
+}
+
+.expense-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.92rem;
+}
+
+.expense-table th, .expense-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.expense-table th {
+    font-weight: 600;
+    color: var(--ink-soft);
+    background: var(--paper);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.expense-table tr:hover td {
+    background: var(--paper-warm);
+}
+
+/* Category Badges */
+.category-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.category-food {
+    background: var(--accent-2-light);
+    color: var(--accent-2);
+}
+
+.category-bills {
+    background: #fbf0f3;
+    color: #c0392b;
+}
+
+.category-transport {
+    background: #e8f0eb;
+    color: var(--accent);
+}
+
+.category-shopping {
+    background: #edf2f7;
+    color: #4a5568;
+}
+
+.category-health {
+    background: #fffaf0;
+    color: #dd6b20;
+}
+
+.category-entertainment {
+    background: #ebf8ff;
+    color: #2b6cb0;
+}
+
+.category-other {
+    background: #f7fafc;
+    color: #718096;
+}
+
+/* Category Progress Bars */
+.category-breakdown-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.category-breakdown-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.category-breakdown-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+}
+
+.category-progress-track {
+    height: 8px;
+    background: var(--border-soft);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.category-progress-bar {
+    height: 100%;
+    border-radius: 999px;
+}
+
+/* Progress Bar specific background colors to ensure high contrast */
+.category-progress-bar.category-food { background: #f5a623; }
+.category-progress-bar.category-bills { background: #c0392b; }
+.category-progress-bar.category-transport { background: var(--accent); }
+.category-progress-bar.category-shopping { background: #4a5568; }
+.category-progress-bar.category-health { background: #dd6b20; }
+.category-progress-bar.category-entertainment { background: #2b6cb0; }
+.category-progress-bar.category-other { background: #718096; }
+

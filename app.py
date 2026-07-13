@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, session, g
+from flask import Flask, render_template, request, redirect, url_for, session, g, flash, abort
 import sqlite3
 import re
 from werkzeug.security import generate_password_hash, check_password_hash
-from database.db import get_db, init_db, seed_db, close_db
+from database.db import get_db, init_db, seed_db, close_db, create_user, get_user_by_email
 
 
 EMAIL_REGEX = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
@@ -22,6 +22,9 @@ def landing():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    if request.method not in ["GET", "POST"]:
+        abort(405)
+
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip()
@@ -30,46 +33,37 @@ def register():
 
         # 1. Validate empty fields
         if not name or not email or not password:
-            error = "All fields are required."
-            return render_template("register.html", error=error, name=name, email=email)
+            flash("All fields are required.", "error")
+            return render_template("register.html", name=name, email=email)
 
         # 2. Validate email format
         if not EMAIL_REGEX.match(email):
-            error = "Invalid email format."
-            return render_template("register.html", error=error, name=name, email=email)
+            flash("Invalid email format.", "error")
+            return render_template("register.html", name=name, email=email)
 
         # 3. Validate password length (min 8 characters)
         if len(password) < 8:
-            error = "Password must be at least 8 characters long."
-            return render_template("register.html", error=error, name=name, email=email)
+            flash("Password must be at least 8 characters long.", "error")
+            return render_template("register.html", name=name, email=email)
 
-        # 4. Validate password confirmation (if present in the form submit)
+        # 4. Validate password confirmation
         if confirm_password is not None and confirm_password != password:
-            error = "Passwords do not match."
-            return render_template("register.html", error=error, name=name, email=email)
+            flash("Passwords do not match.", "error")
+            return render_template("register.html", name=name, email=email)
 
-        conn = get_db()
-        cursor = conn.cursor()
+        # 5. Check duplicate email
+        if get_user_by_email(email) is not None:
+            flash("Email already registered", "error")
+            return render_template("register.html", name=name, email=email)
 
-        # 5. Check if email is already registered (Application-level unique check)
-        cursor.execute("SELECT id FROM users WHERE email = ?;", (email,))
-        if cursor.fetchone() is not None:
-            error = "Email already registered"
-            return render_template("register.html", error=error, name=name, email=email)
-
-        # 6. Insert the new user
-        password_hash = generate_password_hash(password)
+        # 6. Create user
         try:
-            cursor.execute(
-                "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?);",
-                (name, email, password_hash)
-            )
-            conn.commit()
+            create_user(name, email, password)
         except sqlite3.IntegrityError:
-            # Enforce database-level unique check safety
-            error = "Email already registered"
-            return render_template("register.html", error=error, name=name, email=email)
+            flash("Email already registered", "error")
+            return render_template("register.html", name=name, email=email)
 
+        flash("Registration successful! Please sign in.", "success")
         return redirect(url_for("login"))
 
     return render_template("register.html")
@@ -87,22 +81,22 @@ def load_logged_in_user():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if request.method not in ["GET", "POST"]:
+        abort(405)
+
     if request.method == "POST":
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
 
         if not email or not password:
-            error = "Both email and password are required."
-            return render_template("login.html", error=error, email=email)
+            flash("Both email and password are required.", "error")
+            return render_template("login.html", email=email)
 
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = ?;", (email,))
-        user = cursor.fetchone()
+        user = get_user_by_email(email)
 
         if user is None or not check_password_hash(user["password_hash"], password):
-            error = "Invalid email or password."
-            return render_template("login.html", error=error, email=email)
+            flash("Invalid email or password.", "error")
+            return render_template("login.html", email=email)
 
         session.clear()
         session["user_id"] = user["id"]
@@ -133,7 +127,45 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    return "Profile page — coming in Step 4"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    user_info = {
+        "name": "Demo User",
+        "email": "demo@spendly.com",
+        "joined": "July 2026"
+    }
+
+    stats = {
+        "total_spent": "₹1,584.10",
+        "transaction_count": 8,
+        "top_category": "Bills"
+    }
+
+    transactions = [
+        {"date": "2026-07-01", "description": "Monthly Apartment Rent", "category": "Bills", "amount": "₹1,250.00"},
+        {"date": "2026-07-02", "description": "Lunch at office cafeteria", "category": "Food", "amount": "₹45.50"},
+        {"date": "2026-07-04", "description": "Metro card recharge", "category": "Transport", "amount": "₹15.00"},
+        {"date": "2026-07-06", "description": "Summer clothes shopping", "category": "Shopping", "amount": "₹120.00"},
+        {"date": "2026-07-08", "description": "Medical prescription checkout", "category": "Health", "amount": "₹85.00"},
+    ]
+
+    category_breakdown = [
+        {"category": "Bills", "amount": "₹1,250.00", "percentage": 79},
+        {"category": "Shopping", "amount": "₹120.00", "percentage": 8},
+        {"category": "Health", "amount": "₹85.00", "percentage": 5},
+        {"category": "Food", "amount": "₹45.50", "percentage": 3},
+        {"category": "Transport", "amount": "₹15.00", "percentage": 1},
+        {"category": "Other", "amount": "₹68.60", "percentage": 4}
+    ]
+
+    return render_template(
+        "profile.html",
+        user_info=user_info,
+        stats=stats,
+        transactions=transactions,
+        category_breakdown=category_breakdown
+    )
 
 
 @app.route("/expenses/add")
