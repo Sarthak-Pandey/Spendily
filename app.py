@@ -17,6 +17,8 @@ app.secret_key = "spendly-secret-key-for-session-management"
 
 @app.route("/")
 def landing():
+    if session.get("user_id"):
+        return redirect(url_for("profile"))
     return render_template("landing.html")
 
 
@@ -24,6 +26,9 @@ def landing():
 def register():
     if request.method not in ["GET", "POST"]:
         abort(405)
+
+    if session.get("user_id"):
+        return redirect(url_for("profile"))
 
     if request.method == "POST":
         name = request.form.get("name", "").strip()
@@ -84,6 +89,9 @@ def login():
     if request.method not in ["GET", "POST"]:
         abort(405)
 
+    if session.get("user_id"):
+        return redirect(url_for("profile"))
+
     if request.method == "POST":
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
@@ -100,7 +108,7 @@ def login():
 
         session.clear()
         session["user_id"] = user["id"]
-        return redirect(url_for("landing"))
+        return redirect(url_for("profile"))
 
     return render_template("login.html")
 
