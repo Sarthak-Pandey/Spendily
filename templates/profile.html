@@ -2,8 +2,22 @@
 
 {% block title %}Profile — Spendly{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="profile-section">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="profile-flashes">
+          {% for category, message in messages %}
+            <div class="profile-flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
 
     <!-- User Info Card -->
     <div class="profile-user-card">
@@ -22,6 +36,39 @@
         
         <!-- Main: Stats & Transactions -->
         <div style="display: flex; flex-direction: column; gap: 2rem;">
+            
+            <!-- Date Filter Bar -->
+            <div class="filter-bar-card">
+                <div class="presets-group">
+                    <a href="{{ url_for('profile') }}" 
+                       class="preset-link {% if active_preset == 'all-time' %}active{% endif %}">
+                        All Time
+                    </a>
+                    <a href="{{ url_for('profile', date_from=presets.this_month.start, date_to=presets.this_month.end) }}" 
+                       class="preset-link {% if active_preset == 'this-month' %}active{% endif %}">
+                        This Month
+                    </a>
+                    <a href="{{ url_for('profile', date_from=presets.last_3.start, date_to=presets.last_3.end) }}" 
+                       class="preset-link {% if active_preset == 'last-3-months' %}active{% endif %}">
+                        Last 3 Months
+                    </a>
+                    <a href="{{ url_for('profile', date_from=presets.last_6.start, date_to=presets.last_6.end) }}" 
+                       class="preset-link {% if active_preset == 'last-6-months' %}active{% endif %}">
+                        Last 6 Months
+                    </a>
+                </div>
+                
+                <div class="filter-separator"></div>
+                
+                <form action="{{ url_for('profile') }}" method="GET" class="custom-filter-form">
+                    <div class="custom-inputs">
+                        <input type="date" id="date_from" name="date_from" value="{{ date_from or '' }}" aria-label="Start date">
+                        <span class="range-separator-text">to</span>
+                        <input type="date" id="date_to" name="date_to" value="{{ date_to or '' }}" aria-label="End date">
+                        <button type="submit" class="btn-filter-apply">Apply</button>
+                    </div>
+                </form>
+            </div>
             
             <!-- Summary Stats -->
             <div class="widget-card">

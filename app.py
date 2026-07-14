@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session, g, flash, abort
 import sqlite3
 import re
+from datetime import datetime, timedelta
+import calendar
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import get_db, init_db, seed_db, close_db, create_user, get_user_by_email
 from database.queries import (
@@ -154,16 +156,61 @@ def profile():
         "joined": db_user["member_since"]
     }
 
-    raw_stats = get_summary_stats(user_id)
+    # Get query params
+    raw_date_from = request.args.get("date_from", "").strip()
+    raw_date_to = request.args.get("date_to", "").strip()
+
+    date_from = None
+    date_to = None
+
+    # Validate dates if both are provided
+    if raw_date_from and raw_date_to:
+        try:
+            dt_from = datetime.strptime(raw_date_from, "%Y-%m-%d")
+            dt_to = datetime.strptime(raw_date_to, "%Y-%m-%d")
+            
+            if dt_from > dt_to:
+                flash("Start date must be before end date.", "error")
+            else:
+                date_from = raw_date_from
+                date_to = raw_date_to
+        except ValueError:
+            # Silently fall back to no filter
+            pass
+
+    # Dynamic calculation of presets
+    today = datetime.now()
+    _, last_day = calendar.monthrange(today.year, today.month)
+    this_month_start = today.replace(day=1).strftime("%Y-%m-%d")
+    this_month_end = today.replace(day=last_day).strftime("%Y-%m-%d")
+    
+    last_3_start = (today - timedelta(days=90)).strftime("%Y-%m-%d")
+    last_3_end = today.strftime("%Y-%m-%d")
+    
+    last_6_start = (today - timedelta(days=180)).strftime("%Y-%m-%d")
+    last_6_end = today.strftime("%Y-%m-%d")
+
+    # Determine active preset
+    if not date_from or not date_to:
+        active_preset = "all-time"
+    elif date_from == this_month_start and date_to == this_month_end:
+        active_preset = "this-month"
+    elif date_from == last_3_start and date_to == last_3_end:
+        active_preset = "last-3-months"
+    elif date_from == last_6_start and date_to == last_6_end:
+        active_preset = "last-6-months"
+    else:
+        active_preset = "custom"
+
+    # Query helpers with date parameters
+    raw_stats = get_summary_stats(user_id, date_from, date_to)
     stats = {
         "total_spent": f"₹{raw_stats['total_spent']:,.2f}",
         "transaction_count": raw_stats["transaction_count"],
         "top_category": raw_stats["top_category"]
     }
 
-
-
-    raw_transactions = get_recent_transactions(user_id)
+    raw_transactions = get_recent_transactions(user_id, limit=10, date_from=date_from, date_to=date_to)
     transactions = [
         {
             "date": tx["date"],
@@ -174,9 +221,7 @@ def profile():
         for tx in raw_transactions
     ]
 
-
-
-    raw_breakdown = get_category_breakdown(user_id)
+    raw_breakdown = get_category_breakdown(user_id, date_from, date_to)
     category_breakdown = [
         {
             "category": item["name"],
@@ -186,14 +231,22 @@ def profile():
         for item in raw_breakdown
     ]
 
-
+    presets = {
+        "this_month": {"start": this_month_start, "end": this_month_end},
+        "last_3": {"start": last_3_start, "end": last_3_end},
+        "last_6": {"start": last_6_start, "end": last_6_end}
+    }
 
     return render_template(
         "profile.html",
         user_info=user_info,
         stats=stats,
         transactions=transactions,
-        category_breakdown=category_breakdown
+        category_breakdown=category_breakdown,
+        presets=presets,
+        active_preset=active_preset,
+        date_from=date_from,
+        date_to=date_to
     )
 
 
