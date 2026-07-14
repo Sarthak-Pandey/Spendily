@@ -3,6 +3,12 @@ import sqlite3
 import re
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import get_db, init_db, seed_db, close_db, create_user, get_user_by_email
+from database.queries import (
+    get_user_by_id,
+    get_summary_stats,
+    get_recent_transactions,
+    get_category_breakdown
+)
 
 
 EMAIL_REGEX = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
@@ -17,8 +23,6 @@ app.secret_key = "spendly-secret-key-for-session-management"
 
 @app.route("/")
 def landing():
-    if session.get("user_id"):
-        return redirect(url_for("profile"))
     return render_template("landing.html")
 
 
@@ -135,37 +139,54 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    if not session.get("user_id"):
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    db_user = get_user_by_id(user_id)
+    if not db_user:
+        session.clear()
         return redirect(url_for("login"))
 
     user_info = {
-        "name": "Demo User",
-        "email": "demo@spendly.com",
-        "joined": "July 2026"
+        "name": db_user["name"],
+        "email": db_user["email"],
+        "joined": db_user["member_since"]
     }
 
+    raw_stats = get_summary_stats(user_id)
     stats = {
-        "total_spent": "₹1,584.10",
-        "transaction_count": 8,
-        "top_category": "Bills"
+        "total_spent": f"₹{raw_stats['total_spent']:,.2f}",
+        "transaction_count": raw_stats["transaction_count"],
+        "top_category": raw_stats["top_category"]
     }
 
+
+
+    raw_transactions = get_recent_transactions(user_id)
     transactions = [
-        {"date": "2026-07-01", "description": "Monthly Apartment Rent", "category": "Bills", "amount": "₹1,250.00"},
-        {"date": "2026-07-02", "description": "Lunch at office cafeteria", "category": "Food", "amount": "₹45.50"},
-        {"date": "2026-07-04", "description": "Metro card recharge", "category": "Transport", "amount": "₹15.00"},
-        {"date": "2026-07-06", "description": "Summer clothes shopping", "category": "Shopping", "amount": "₹120.00"},
-        {"date": "2026-07-08", "description": "Medical prescription checkout", "category": "Health", "amount": "₹85.00"},
+        {
+            "date": tx["date"],
+            "description": tx["description"],
+            "category": tx["category"],
+            "amount": f"₹{tx['amount']:,.2f}"
+        }
+        for tx in raw_transactions
     ]
 
+
+
+    raw_breakdown = get_category_breakdown(user_id)
     category_breakdown = [
-        {"category": "Bills", "amount": "₹1,250.00", "percentage": 79},
-        {"category": "Shopping", "amount": "₹120.00", "percentage": 8},
-        {"category": "Health", "amount": "₹85.00", "percentage": 5},
-        {"category": "Food", "amount": "₹45.50", "percentage": 3},
-        {"category": "Transport", "amount": "₹15.00", "percentage": 1},
-        {"category": "Other", "amount": "₹68.60", "percentage": 4}
+        {
+            "category": item["name"],
+            "amount": f"₹{item['amount']:,.2f}",
+            "percentage": item["pct"]
+        }
+        for item in raw_breakdown
     ]
+
+
 
     return render_template(
         "profile.html",
