@@ -184,3 +184,24 @@
         width: 100%;
     }
 }
+
+.btn-delete {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--danger-light);
+    background: var(--danger-light);
+    color: var(--danger);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 0.25rem;
+    display: inline-block;
+}
+
+.btn-delete:hover {
+    background: var(--danger);
+    color: var(--paper-card);
+    border-color: var(--danger);
+}

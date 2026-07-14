@@ -1,12 +1,16 @@
 import os
+import sys
 import sqlite3
 from datetime import datetime
 from flask import g, has_app_context
 from werkzeug.security import generate_password_hash
 
+# Use a separate database file for tests to isolate test data from production
+db_filename = 'spendly_test.db' if 'pytest' in sys.modules else 'spendly.db'
+
 DATABASE_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
-    'spendly.db'
+    db_filename
 )
 
 def get_db():
@@ -48,9 +52,18 @@ def init_db():
                 name TEXT NOT NULL,
                 email TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
-                created_at TEXT DEFAULT (datetime('now'))
+                created_at TEXT DEFAULT (datetime('now')),
+                insights_dirty INTEGER DEFAULT 1
             );
         """)
+        
+        # Migrations safety: attempt to add insights_dirty if database already exists on disk
+        try:
+            conn.execute("ALTER TABLE users ADD COLUMN insights_dirty INTEGER DEFAULT 1;")
+        except sqlite3.OperationalError:
+            # Column already exists, ignore
+            pass
+
         conn.execute("""
             CREATE TABLE IF NOT EXISTS expenses (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,6 +76,39 @@ def init_db():
                 FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
             );
         """)
+        
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS budgets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                category TEXT NOT NULL,
+                monthly_limit REAL NOT NULL,
+                period_start TEXT NOT NULL,
+                active INTEGER DEFAULT 1,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+            );
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS insights (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                action TEXT NOT NULL,
+                importance INTEGER NOT NULL,
+                confidence REAL NOT NULL,
+                category TEXT,
+                period_start TEXT,
+                period_end TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                read INTEGER DEFAULT 0,
+                dismissed INTEGER DEFAULT 0,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+            );
+        """)
+        
         conn.commit()
     finally:
         if not has_app_context():

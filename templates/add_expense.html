@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Add Expense — Spendly{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="auth-container">
+        
+        <div class="auth-header">
+            <h1 class="auth-title">Add new expense</h1>
+            <p class="auth-subtitle">Keep your expense tracking up to date</p>
+        </div>
+
+        <div class="auth-card">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="auth-{{ category if category in ['success', 'error'] else 'error' }}">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('add_expense') }}" method="POST" class="auth-form">
+                
+                <div class="form-group">
+                    <label for="amount" class="form-label">Amount (₹) <span style="color: var(--danger);">*</span></label>
+                    <input type="number" id="amount" name="amount" class="form-input" 
+                           step="0.01" min="0.01" placeholder="0.00" value="{{ amount or '' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="category" class="form-label">Category <span style="color: var(--danger);">*</span></label>
+                    <select id="category" name="category" class="form-input" style="background-color: var(--paper-card); font-family: var(--font-body);" required>
+                        <option value="" disabled {% if not category %}selected{% endif %}>Select a category</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="date" class="form-label">Date <span style="color: var(--danger);">*</span></label>
+                    <input type="date" id="date" name="date" class="form-input" 
+                           value="{{ date or '' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="description" class="form-label">Description</label>
+                    <input type="text" id="description" name="description" class="form-input" 
+                           maxlength="200" placeholder="Optional description..." value="{{ description or '' }}">
+                </div>
+
+                <div class="form-actions" style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="submit" class="nav-cta" style="flex: 1; border: none; font-size: 0.95rem; padding: 0.75rem; text-align: center; cursor: pointer; border-radius: var(--radius-sm);">
+                        Save Expense
+                    </button>
+                    <a href="{{ url_for('profile') }}" 
+                       style="flex: 1; text-align: center; display: inline-block; padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.95rem; background: var(--paper-warm); color: var(--ink-soft); border: 1px solid var(--border); transition: all 0.2s ease;">
+                        Cancel
+                    </a>
+                </div>
+
+            </form>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ai_coach.css') }}">
+
+<div class="coach-container">
+    <!-- Header Section -->
+    <div class="coach-header">
+        <div>
+            <h1 class="coach-title">AI Financial Coach</h1>
+            <p class="coach-subtitle">Personalized spending intelligence, predictive budgeting, and savings advice.</p>
+        </div>
+        <button id="btn-regenerate" class="nav-cta" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 9999px; border: none; cursor: pointer; text-decoration: none;">
+            Regenerate Insights
+        </button>
+    </div>
+
+    <!-- Top Grid: Score & Projections -->
+    <div class="dashboard-grid">
+        <!-- Financial Score Card -->
+        <div class="widget-card score-card">
+            <h3 class="widget-title">Financial Health Score</h3>
+            <div class="score-circle-wrapper">
+                <div class="score-circle" style="--score-pct: {{ financial_score }}%;">
+                    <div class="score-inner">
+                        <span class="score-number">{{ financial_score }}</span>
+                        <span class="score-label">out of 100</span>
+                    </div>
+                </div>
+            </div>
+            <div class="score-status">
+                Status: <span class="status-badge status-{{ health_status | lower | replace(' ', '-') }}">{{ health_status }}</span>
+            </div>
+            <p class="score-desc">
+                Your score combines your estimated savings rate, active budget adherence, and month-over-month spending consistency.
+            </p>
+        </div>
+
+        <!-- Monthly Projections Card -->
+        <div class="widget-card projection-card">
+            <h3 class="widget-title">Month Projection</h3>
+            <div class="projection-stats">
+                <div class="proj-stat-item">
+                    <span class="proj-stat-label">Spent So Far</span>
+                    <span class="proj-stat-val">₹{{ "{:,.2f}".format(prediction.spent_so_far) }}</span>
+                </div>
+                <div class="proj-stat-item">
+                    <span class="proj-stat-label">Projected EOM</span>
+                    <span class="proj-stat-val val-projected">₹{{ "{:,.2f}".format(prediction.projected_total) }}</span>
+                </div>
+            </div>
+
+            <!-- Projection Meter -->
+            <div class="progress-bar-container" style="margin-top: 1.5rem;">
+                <div class="progress-bar-labels">
+                    <span>Days elapsed: {{ prediction.days_elapsed }}/{{ prediction.total_days }}</span>
+                    <span>Pace: {{ "Linear" }}</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: {{ (prediction.days_elapsed / prediction.total_days * 100) | round }}%;"></div>
+                </div>
+            </div>
+            <p class="proj-note" style="margin-top: 1rem; font-size: 0.85rem; color: var(--ink-light);">
+                Based on your daily pace, you are projected to spend ₹{{ "{:,.2f}".format(prediction.difference) }} more by the end of the month.
+            </p>
+        </div>
+    </div>
+
+    <!-- Middle Grid: Active Insights & Active Budgets -->
+    <div class="main-layout-grid">
+        <!-- Left: Insights Feed -->
+        <div class="insights-column">
+            <h2 class="section-title">Coach Insights</h2>
+            
+            {% if not insights %}
+            <div class="empty-state-card">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">✨</div>
+                <h4>All Clear!</h4>
+                <p>Your AI Coach has no active alerts or warnings for your current transactions. Keep maintaining healthy habits!</p>
+            </div>
+            {% else %}
+            <div class="insights-feed">
+                {% for insight in insights %}
+                <div id="insight-card-{{ insight.id }}" class="insight-card type-{{ insight.type }} {% if insight.read %}insight-read{% endif %}">
+                    <div class="insight-header">
+                        <div class="insight-meta">
+                            <span class="badge-type badge-{{ insight.type }}">{{ insight.type | upper }}</span>
+                            <span class="insight-importance">Importance: {{ insight.importance }}/100</span>
+                        </div>
+                        <button class="btn-dismiss-insight" data-id="{{ insight.id }}">Dismiss</button>
+                    </div>
+                    <h3 class="insight-card-title">{{ insight.title }}</h3>
+                    <p class="insight-card-desc">{{ insight.description }}</p>
+                    
+                    <div class="insight-action-box">
+                        <strong>Actionable Advice:</strong>
+                        <span>{{ insight.action }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right: Budgets and Savings Opportunities -->
+        <div class="sidebar-column">
+            <!-- Active Budgets Card -->
+            <div class="widget-card">
+                <div class="widget-header-flex">
+                    <h3 class="widget-title" style="margin: 0;">Category Budgets</h3>
+                </div>
+                
+                {% if not budgets %}
+                <p class="empty-text" style="margin-top: 1rem; color: var(--ink-light); font-size: 0.9rem;">
+                    No active budgets defined. Establish budget goals to monitor progress.
+                </p>
+                {% else %}
+                <div class="budget-list" style="margin-top: 1.25rem;">
+                    {% for b in budgets %}
+                    <div class="budget-item">
+                        <div class="budget-item-header">
+                            <span class="budget-cat font-medium">{{ b.category }}</span>
+                            <span class="budget-amounts">
+                                <strong>₹{{ "{:,.2f}".format(b.spent) }}</strong> / ₹{{ "{:,.2f}".format(b.limit) }}
+                            </span>
+                        </div>
+                        <div class="progress-track" style="height: 6px; margin: 0.5rem 0 0.25rem 0;">
+                            <div class="progress-fill fill-{{ b.status }}" style="width: {{ min(b.pct_used, 100) }}%;"></div>
+                        </div>
+                        <div class="budget-item-footer">
+                            <span class="budget-pct">{{ b.pct_used }}% consumed</span>
+                            <span class="status-text status-text-{{ b.status }}">{{ b.status | upper }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Savings Opportunities Card -->
+            <div class="widget-card" style="margin-top: 1.5rem;">
+                <h3 class="widget-title">Savings Opportunities</h3>
+                
+                {% if not savings_ops %}
+                <p class="empty-text" style="color: var(--ink-light); font-size: 0.9rem; margin-top: 1rem;">
+                    We couldn't detect any high-frequency spending opportunities in the last 30 days. Good job!
+                </p>
+                {% else %}
+                <div class="savings-list" style="margin-top: 1.25rem;">
+                    {% for op in savings_ops %}
+                    <div class="savings-item">
+                        <h4 class="savings-item-title">{{ op.title }}</h4>
+                        <p class="savings-item-msg">{{ op.message }}</p>
+                        <div class="savings-projections">
+                            <div class="saving-proj-box">
+                                <span class="saving-proj-lbl">Monthly Save</span>
+                                <span class="saving-proj-val">₹{{ "{:,.2f}".format(op.potential_monthly_savings) }}</span>
+                            </div>
+                            <div class="saving-proj-box">
+                                <span class="saving-proj-lbl">Annual Save</span>
+                                <span class="saving-proj-val val-green">₹{{ "{:,.2f}".format(op.potential_annual_savings) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Disclaimer -->
+    <div class="coach-disclaimer">
+        Disclaimer: These automated insights are observations compiled directly from your transaction database. They do not constitute certified professional financial planning, auditing, or legal investment advice.
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Dismiss insight handlers
+    document.querySelectorAll(".btn-dismiss-insight").forEach(button => {
+        button.addEventListener("click", function() {
+            const id = this.getAttribute("data-id");
+            const card = document.getElementById("insight-card-" + id);
+            
+            // Send API call to dismiss
+            fetch("/api/ai/insights/" + id + "/dismiss", {
+                method: "POST"
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Trigger fade and slide up animation
+                    card.style.opacity = "0";
+                    card.style.transform = "translateY(-10px)";
+                    card.style.transition = "all 0.3s ease";
+                    setTimeout(() => {
+                        card.remove();
+                        // If feed is empty, reload page to show empty state
+                        const feed = document.querySelector(".insights-feed");
+                        if (feed && feed.children.length === 0) {
+                            window.location.reload();
+                        }
+                    }, 300);
+                }
+            })
+            .catch(err => console.error("Error dismissing insight:", err));
+        });
+    });
+
+    // Mark as read when card is clicked (optional micro-interaction)
+    document.querySelectorAll(".insight-card").forEach(card => {
+        card.addEventListener("click", function(e) {
+            if (e.target.classList.contains("btn-dismiss-insight")) return;
+            const id = this.id.replace("insight-card-", "");
+            if (this.classList.contains("insight-read")) return;
+
+            fetch("/api/ai/insights/" + id + "/read", {
+                method: "POST"
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    this.classList.add("insight-read");
+                }
+            })
+            .catch(err => console.error("Error marking read:", err));
+        });
+    });
+
+    // Regenerate Insights handler
+    const btnRegen = document.getElementById("btn-regenerate");
+    if (btnRegen) {
+        btnRegen.addEventListener("click", function() {
+            btnRegen.disabled = true;
+            btnRegen.innerText = "Regenerating...";
+            
+            fetch("/api/ai/generate", {
+                method: "POST"
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    btnRegen.disabled = false;
+                    btnRegen.innerText = "Regenerate Insights";
+                    alert("Failed to regenerate insights. Please try again.");
+                }
+            })
+            .catch(err => {
+                btnRegen.disabled = false;
+                btnRegen.innerText = "Regenerate Insights";
+                console.error("Error regenerating:", err);
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

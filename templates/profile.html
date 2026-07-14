@@ -91,7 +91,12 @@
 
             <!-- Transaction History -->
             <div class="widget-card">
-                <h3 class="widget-title">Recent Transactions</h3>
+                <div class="widget-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                    <h3 class="widget-title" style="margin: 0;">Recent Transactions</h3>
+                    <a href="{{ url_for('add_expense') }}" class="nav-cta" style="font-size: 0.85rem; padding: 0.45rem 1rem; text-decoration: none; border-radius: var(--radius-sm); border: none;">
+                        + Add Expense
+                    </a>
+                </div>
                 <div class="expense-table-wrapper">
                     <table class="expense-table">
                         <thead>
@@ -100,6 +105,7 @@
                                 <th>Description</th>
                                 <th>Category</th>
                                 <th style="text-align: right;">Amount</th>
+                                <th style="text-align: center; width: 80px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -114,6 +120,16 @@
                                 </td>
                                 <td style="text-align: right; font-weight: 500; color: var(--ink);">
                                     {{ tx.amount }}
+                                </td>
+                                <td style="text-align: center; white-space: nowrap;">
+                                    <a href="{{ url_for('edit_expense', id=tx.id) }}" class="preset-link" style="font-size: 0.8rem; padding: 0.25rem 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border); transition: all 0.2s ease;">
+                                        Edit
+                                    </a>
+                                    <form method="POST" action="{{ url_for('delete_expense_route', id=tx.id) }}" style="display:inline;" onsubmit="return confirm('Delete this expense?')">
+                                        <button type="submit" class="btn-delete">
+                                            Delete
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                             {% endfor %}

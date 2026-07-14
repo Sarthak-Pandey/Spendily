@@ -123,7 +123,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     try:
         if date_from and date_to:
             rows = conn.execute("""
-                SELECT date, description, category, amount 
+                SELECT id, date, description, category, amount 
                 FROM expenses 
                 WHERE user_id = ? AND date BETWEEN ? AND ?
                 ORDER BY date DESC, id DESC 
@@ -131,7 +131,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
             """, (user_id, date_from, date_to, limit)).fetchall()
         else:
             rows = conn.execute("""
-                SELECT date, description, category, amount 
+                SELECT id, date, description, category, amount 
                 FROM expenses 
                 WHERE user_id = ? 
                 ORDER BY date DESC, id DESC 
@@ -140,6 +140,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
         
         return [
             {
+                "id": r["id"],
                 "date": r["date"],
                 "description": r["description"],
                 "category": r["category"],
@@ -207,5 +208,94 @@ def get_category_breakdown(user_id, date_from=None, date_to=None):
             breakdown[0]["pct"] += (100 - pct_sum)
             
         return breakdown
+    finally:
+        _close_conn(conn)
+
+def insert_expense(user_id, amount, category, date, description):
+    """
+    Inserts a new expense row into the database.
+    Description is optional (stores None/NULL if empty or blank).
+    """
+    conn = get_db()
+    try:
+        desc = None
+        if description:
+            stripped = description.strip()
+            if stripped:
+                desc = stripped
+                
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO expenses (user_id, amount, category, date, description)
+            VALUES (?, ?, ?, ?, ?);
+        """, (user_id, amount, category, date, desc))
+        last_id = cursor.lastrowid
+        cursor.execute("UPDATE users SET insights_dirty = 1 WHERE id = ?;", (user_id,))
+        conn.commit()
+        return last_id
+    finally:
+        _close_conn(conn)
+
+def get_expense_by_id(expense_id, user_id):
+    """
+    Fetches a single expense row scoped to the user_id.
+    Returns the matching row as a dict, or None if not found or not owned.
+    """
+    conn = get_db()
+    try:
+        row = conn.execute("""
+            SELECT id, user_id, amount, category, date, description 
+            FROM expenses 
+            WHERE id = ? AND user_id = ?;
+        """, (expense_id, user_id)).fetchone()
+        
+        if row:
+            return dict(row)
+        return None
+    finally:
+        _close_conn(conn)
+
+def update_expense(expense_id, user_id, amount, category, date, description):
+    """
+    Updates an existing expense in place, enforcing user ownership.
+    Strips description and stores None/NULL if blank.
+    """
+    conn = get_db()
+    try:
+        desc = None
+        if description:
+            stripped = description.strip()
+            if stripped:
+                desc = stripped
+                
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE expenses 
+            SET amount = ?, category = ?, date = ?, description = ? 
+            WHERE id = ? AND user_id = ?;
+        """, (amount, category, date, desc, expense_id, user_id))
+        rows_affected = cursor.rowcount
+        cursor.execute("UPDATE users SET insights_dirty = 1 WHERE id = ?;", (user_id,))
+        conn.commit()
+        return rows_affected
+    finally:
+        _close_conn(conn)
+
+def delete_expense(expense_id, user_id):
+    """
+    Deletes an expense row scoped to the user_id for ownership safety.
+    Returns the number of affected rows.
+    """
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            DELETE FROM expenses 
+            WHERE id = ? AND user_id = ?;
+        """, (expense_id, user_id))
+        rows_affected = cursor.rowcount
+        cursor.execute("UPDATE users SET insights_dirty = 1 WHERE id = ?;", (user_id,))
+        conn.commit()
+        return rows_affected
     finally:
         _close_conn(conn)
