@@ -1,0 +1,186 @@
+/* ------------------------------------------------------------------ */
+/* Premium Date Filter Bar Styles                                    */
+/* ------------------------------------------------------------------ */
+
+.filter-bar-card {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.presets-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.preset-link {
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.45rem 1.15rem;
+    border-radius: 9999px; /* Pill shape */
+    background: var(--paper-warm);
+    color: var(--ink-soft);
+    border: 1px solid transparent;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.preset-link:hover {
+    background: var(--border-soft);
+    color: var(--ink);
+}
+
+.preset-link.active {
+    background: var(--accent);
+    color: var(--paper-card);
+    border-color: var(--accent);
+}
+
+/* Vertical Separator Line */
+.filter-separator {
+    width: 1px;
+    height: 24px;
+    background-color: var(--border);
+    margin: 0 0.5rem;
+}
+
+.custom-filter-form {
+    display: flex;
+    align-items: center;
+}
+
+.custom-inputs {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.range-separator-text {
+    font-size: 0.875rem;
+    color: var(--ink-muted);
+    font-weight: 400;
+}
+
+.custom-inputs input[type="date"] {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.45rem 0.85rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    color: var(--ink);
+    background: var(--paper); /* Soft light gray background */
+    outline: none;
+    transition: all 0.2s ease;
+    height: 36px;
+}
+
+.custom-inputs input[type="date"]:focus {
+    border-color: var(--accent);
+    background: var(--paper-card);
+    box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+.btn-filter-apply {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 500;
+    height: 36px;
+    padding: 0.45rem 1.25rem;
+    background: var(--accent);
+    color: var(--paper-card);
+    border: none;
+    border-radius: 9999px; /* Pill shape */
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+.btn-filter-apply:hover {
+    opacity: 0.95;
+    transform: translateY(-0.5px);
+}
+
+.btn-filter-apply:active {
+    transform: translateY(0);
+}
+
+/* Flash Messages */
+.profile-flashes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+}
+
+.profile-flash-error {
+    padding: 1rem;
+    background-color: var(--danger-light);
+    color: var(--danger);
+    border: 1px solid rgba(192, 57, 43, 0.15);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.profile-flash-success {
+    padding: 1rem;
+    background-color: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid rgba(26, 71, 42, 0.15);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Media Queries */
+@media (max-width: 900px) {
+    .filter-bar-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .filter-separator {
+        display: none; /* Hide separator on stacked view */
+    }
+    
+    .custom-filter-form {
+        width: 100%;
+    }
+    
+    .custom-inputs {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .custom-inputs input[type="date"] {
+        flex: 1;
+        min-width: 0; /* Prevents overflow */
+    }
+}
+
+@media (max-width: 500px) {
+    .custom-inputs {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .range-separator-text {
+        text-align: center;
+        margin: 0.25rem 0;
+    }
+    
+    .btn-filter-apply {
+        width: 100%;
+    }
+}
