@@ -15,6 +15,13 @@ def app():
         "TESTING": True,
         "SECRET_KEY": "test-key"
     })
+    import os
+    from database.db import DATABASE_PATH
+    if os.path.exists(DATABASE_PATH) and "spendly_test.db" in DATABASE_PATH:
+        try:
+            os.remove(DATABASE_PATH)
+        except Exception:
+            pass
     with flask_app.app_context():
         init_db()
         seed_db()

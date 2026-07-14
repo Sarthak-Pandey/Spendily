@@ -22,6 +22,8 @@
                 {% if g.user %}
                     <span class="nav-user" style="color: var(--ink-soft); font-weight: 500;">Hello, {{ g.user.name }}</span>
                     <a href="{{ url_for('profile') }}">Profile</a>
+                    <a href="{{ url_for('ai_coach.dashboard') }}">AI Coach</a>
+                    <a href="{{ url_for('add_expense') }}">Add Expense</a>
                     <a href="{{ url_for('logout') }}" class="nav-cta">Sign out</a>
                 {% else %}
                     <a href="{{ url_for('login') }}">Sign in</a>

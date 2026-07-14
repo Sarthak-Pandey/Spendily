@@ -9,7 +9,11 @@ from database.queries import (
     get_user_by_id,
     get_summary_stats,
     get_recent_transactions,
-    get_category_breakdown
+    get_category_breakdown,
+    insert_expense,
+    get_expense_by_id,
+    update_expense,
+    delete_expense
 )
 
 
@@ -17,6 +21,9 @@ EMAIL_REGEX = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
 
 app = Flask(__name__)
 app.secret_key = "spendly-secret-key-for-session-management"
+
+from blueprints.ai_coach import ai_coach_bp
+app.register_blueprint(ai_coach_bp)
 
 
 # ------------------------------------------------------------------ #
@@ -213,6 +220,7 @@ def profile():
     raw_transactions = get_recent_transactions(user_id, limit=10, date_from=date_from, date_to=date_to)
     transactions = [
         {
+            "id": tx["id"],
             "date": tx["date"],
             "description": tx["description"],
             "category": tx["category"],
@@ -250,19 +258,154 @@ def profile():
     )
 
 
-@app.route("/expenses/add")
+@app.route("/expenses/add", methods=["GET", "POST"])
 def add_expense():
-    return "Add expense — coming in Step 7"
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    categories = ["Food", "Transport", "Bills", "Health", "Entertainment", "Shopping", "Other"]
+
+    if request.method == "POST":
+        amount_raw = request.form.get("amount", "").strip()
+        category = request.form.get("category", "").strip()
+        date_raw = request.form.get("date", "").strip()
+        description = request.form.get("description", "")
+
+        # 1. Validate amount
+        if not amount_raw:
+            flash("Amount is required.", "error")
+            return render_template("add_expense.html", categories=categories, amount=amount_raw, category=category, date=date_raw, description=description)
+        try:
+            amount = float(amount_raw)
+            if amount <= 0:
+                flash("Amount must be a positive number greater than 0.", "error")
+                return render_template("add_expense.html", categories=categories, amount=amount_raw, category=category, date=date_raw, description=description)
+        except ValueError:
+            flash("Amount must be a valid number.", "error")
+            return render_template("add_expense.html", categories=categories, amount=amount_raw, category=category, date=date_raw, description=description)
+
+        # 2. Validate category
+        if not category:
+            flash("Category is required.", "error")
+            return render_template("add_expense.html", categories=categories, amount=amount_raw, category=category, date=date_raw, description=description)
+        if category not in categories:
+            flash("Invalid category selected.", "error")
+            return render_template("add_expense.html", categories=categories, amount=amount_raw, category=category, date=date_raw, description=description)
+
+        # 3. Validate date
+        if not date_raw:
+            flash("Date is required.", "error")
+            return render_template("add_expense.html", categories=categories, amount=amount_raw, category=category, date=date_raw, description=description)
+        try:
+            datetime.strptime(date_raw, "%Y-%m-%d")
+        except ValueError:
+            flash("Date must be in YYYY-MM-DD format.", "error")
+            return render_template("add_expense.html", categories=categories, amount=amount_raw, category=category, date=date_raw, description=description)
+
+        # Optional description check
+        if description and len(description) > 200:
+            flash("Description must be 200 characters or less.", "error")
+            return render_template("add_expense.html", categories=categories, amount=amount_raw, category=category, date=date_raw, description=description)
+
+        # Insert expense
+        insert_expense(user_id, amount, category, date_raw, description)
+        flash("Expense added successfully!", "success")
+        return redirect(url_for("profile"))
+
+    # GET request
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    return render_template("add_expense.html", categories=categories, date=today_str)
 
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    # Fetch the expense, verifying ownership
+    expense = get_expense_by_id(id, user_id)
+    if not expense:
+        abort(404)
+
+    categories = ["Food", "Transport", "Bills", "Health", "Entertainment", "Shopping", "Other"]
+
+    if request.method == "POST":
+        amount_raw = request.form.get("amount", "").strip()
+        category = request.form.get("category", "").strip()
+        date_raw = request.form.get("date", "").strip()
+        description = request.form.get("description", "")
+
+        # Construct dictionary for form re-rendering on validation error
+        edited_expense = {
+            "id": id,
+            "amount": amount_raw,
+            "category": category,
+            "date": date_raw,
+            "description": description
+        }
+
+        # 1. Validate amount
+        if not amount_raw:
+            flash("Amount is required.", "error")
+            return render_template("edit_expense.html", categories=categories, expense=edited_expense)
+        try:
+            amount = float(amount_raw)
+            if amount <= 0:
+                flash("Amount must be a positive number greater than 0.", "error")
+                return render_template("edit_expense.html", categories=categories, expense=edited_expense)
+        except ValueError:
+            flash("Amount must be a valid number.", "error")
+            return render_template("edit_expense.html", categories=categories, expense=edited_expense)
+
+        # 2. Validate category
+        if not category:
+            flash("Category is required.", "error")
+            return render_template("edit_expense.html", categories=categories, expense=edited_expense)
+        if category not in categories:
+            flash("Invalid category selected.", "error")
+            return render_template("edit_expense.html", categories=categories, expense=edited_expense)
+
+        # 3. Validate date
+        if not date_raw:
+            flash("Date is required.", "error")
+            return render_template("edit_expense.html", categories=categories, expense=edited_expense)
+        try:
+            datetime.strptime(date_raw, "%Y-%m-%d")
+        except ValueError:
+            flash("Date must be in YYYY-MM-DD format.", "error")
+            return render_template("edit_expense.html", categories=categories, expense=edited_expense)
+
+        # Optional description check
+        if description and len(description) > 200:
+            flash("Description must be 200 characters or less.", "error")
+            return render_template("edit_expense.html", categories=categories, expense=edited_expense)
+
+        # Update expense
+        update_expense(id, user_id, amount, category, date_raw, description)
+        flash("Expense updated successfully!", "success")
+        return redirect(url_for("profile"))
+
+    # GET request
+    return render_template("edit_expense.html", categories=categories, expense=expense)
 
 
-@app.route("/expenses/<int:id>/delete")
-def delete_expense(id):
-    return "Delete expense — coming in Step 9"
+@app.route("/expenses/<int:id>/delete", methods=["POST"])
+def delete_expense_route(id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    # Fetch the expense, verifying ownership
+    expense = get_expense_by_id(id, user_id)
+    if not expense:
+        abort(404)
+
+    # Perform deletion
+    delete_expense(id, user_id)
+    flash("Expense deleted successfully!", "success")
+    return redirect(url_for("profile"))
 
 
 # Register teardown helper to close DB connections
